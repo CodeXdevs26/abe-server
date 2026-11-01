@@ -1,0 +1,29 @@
+services:
+  app:
+    restart: unless-stopped
+    build:
+      context: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5006:5006"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+    # This line pulls in every variable from your .env file
+    env_file:
+      - .env
+    depends_on:
+      - mongo-db
+
+  mongo-db:
+    restart: unless-stopped
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

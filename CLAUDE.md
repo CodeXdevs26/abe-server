@@ -18,8 +18,12 @@ npm run seed       # run DB seeders standalone (seed:prod uses dist/)
 
 - **Tests:** there are none. `npm test` is a placeholder that exits 1. Verify changes with `npx tsc --noEmit` plus targeted scripts run through `node -r ts-node/register/transpile-only <file>`.
 - **Lint:** `npm run lint` currently fails because there is no ESLint flat config in the repo.
-- **Package manager:** npm, using `package-lock.json`. `pnpm-lock.yaml` is stale.
-- **Docker:** `docker-compose.yml` runs the dev server plus a local Mongo container. The app itself uses `DATABASE_URL`, which normally points at Atlas.
+- **Package manager:** npm only, using `package-lock.json`. Don't add other lockfiles.
+- **Docker:** the multi-stage `Dockerfile` has targets `dev` (hot reload) and `prod` (the default: compiled `dist/`, prod deps only, non-root `node` user, healthcheck).
+  - Dev: `docker compose up --build` (source mounted; add `--profile local-db` for an optional local Mongo).
+  - Prod: `docker compose -f docker-compose.prod.yml up -d --build`.
+  - `.env` is excluded from the image and passed at runtime via `env_file`. Compose forces `IP_ADDRESS=0.0.0.0` inside the container.
+  - The prod image must include `src/app/emailTemplates/`, because services read the templates from `./src/app/emailTemplates/*.html` relative to the working directory.
 
 ## Architecture
 

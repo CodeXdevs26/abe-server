@@ -1,27 +1,31 @@
+# Development: hot reload with source mounted.
+#   docker compose up --build
+# Optional local MongoDB (app uses DATABASE_URL, normally Atlas):
+#   docker compose --profile local-db up --build
 services:
   app:
-    restart: unless-stopped
     build:
       context: .
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      IP_ADDRESS: 0.0.0.0 # must bind all interfaces inside the container
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+    ports:
+      - "${PORT:-5001}:${PORT:-5001}"
     volumes:
       - .:/app
       - /app/node_modules
-    ports:
-      - "5006:5006"
-    environment:
-      CHOKIDAR_USEPOLLING: "true"
-      CHOKIDAR_INTERVAL: "1000"
-    # This line pulls in every variable from your .env file
-    env_file:
-      - .env
-    depends_on:
-      - mongo-db
 
   mongo-db:
+    profiles: ["local-db"]
+    image: mongo:8
     restart: unless-stopped
-    image: mongo:latest
     ports:
-      - "127.0.0.1:27017:27017" # bind to localhost only - never expose unauthenticated MongoDB publicly
+      - "127.0.0.1:27017:27017" # localhost only - never expose MongoDB publicly
     volumes:
       - mongo-data:/data/db
 

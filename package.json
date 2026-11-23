@@ -5,12 +5,12 @@
   "scripts": {
     "build": "tsc",
     "start:prod": "node ./dist/server.js",
-    "dev": "npx ts-node-dev --respawn --poll --transpile-only src/server.ts",
+    "dev": "ts-node-dev --respawn --poll --transpile-only src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "npx eslint src --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"src/**/*.+(js|ts|json)\"",
-    "seed": "npx ts-node --transpile-only src/seed.ts",
+    "seed": "ts-node --transpile-only src/seed.ts",
     "seed:prod": "node ./dist/seed.js"
   },
   "keywords": [],
@@ -34,7 +34,6 @@
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.3",
     "stripe": "^17.6.0",
-    "ts-node-dev": "^2.0.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -55,6 +54,8 @@
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.14.0",
     "prettier": "^3.4.2",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.73.0"
   }

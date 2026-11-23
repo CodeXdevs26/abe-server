@@ -82,6 +82,7 @@ authRouters.post(
 authRouters.get("/get-access-token/:token", AuthController.getNewAccessToken);
 authRouters.patch(
   "/change-user-status/:email",
+  authVerify(["admin"]),
   AuthController.changeUserStatus,
 );
 authRouters.get(

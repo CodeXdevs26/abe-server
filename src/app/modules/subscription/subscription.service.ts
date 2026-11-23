@@ -337,15 +337,17 @@ const syncSubscriptionFromStripe = async (
 const handleWebhook = async (body: Buffer, signature?: string | string[]) => {
   let event: Stripe.Event;
 
-  if (config.stripe_webhook_secret && signature) {
-    event = stripe.webhooks.constructEvent(
-      body,
-      Array.isArray(signature) ? signature[0] : signature,
-      config.stripe_webhook_secret,
+  // Security: always verify the Stripe signature. Never trust unsigned payloads.
+  if (!config.stripe_webhook_secret || !signature) {
+    throw new Error(
+      "Stripe webhook rejected: missing STRIPE_WEBHOOK_SECRET or stripe-signature header",
     );
-  } else {
-    event = JSON.parse(body.toString()) as Stripe.Event;
   }
+  event = stripe.webhooks.constructEvent(
+    body,
+    Array.isArray(signature) ? signature[0] : signature,
+    config.stripe_webhook_secret,
+  );
 
   switch (event.type) {
     case "checkout.session.completed": {

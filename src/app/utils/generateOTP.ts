@@ -1,4 +1,7 @@
+import { randomInt } from "crypto";
+
+// Cryptographically secure 6-digit OTP (Math.random is predictable)
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000);
-}
+  return randomInt(100000, 1000000);
+};
 export default generateOTP;

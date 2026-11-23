@@ -15,7 +15,7 @@ class QueryBuilder<T> {
       this.queryModel = this.queryModel.find({
         $or: searchAbleFields.map((field: string) => ({
           [field]: {
-            $regex: searchTerm,
+            $regex: String(searchTerm).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
             $options: 'i',
           },
         })),
@@ -37,6 +37,13 @@ class QueryBuilder<T> {
       'populatedFields',
     ];
     excludeFields.forEach(field => delete queryObject[field]);
+    // Security: block NoSQL operator injection (e.g. ?field[$ne]=x, $where) from query params
+    Object.keys(queryObject).forEach(key => {
+      const value = queryObject[key];
+      if (key.startsWith('$') || (value !== null && typeof value === 'object')) {
+        delete queryObject[key];
+      }
+    });
 
     this.queryModel = this.queryModel.find(queryObject);
     return this;

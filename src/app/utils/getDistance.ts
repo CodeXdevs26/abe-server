@@ -8,7 +8,7 @@ const getDistance = async (origin: string, destination: string) => {
       params: {
         origins: [origin],
         destinations: [destination],
-        key: 'AIzaSyBFi80uuJIWkkLCpodFa8oXmD8XD_h8LMc',
+        key: process.env.GOOGLE_MAPS_API_KEY as string,
       },
     });
 

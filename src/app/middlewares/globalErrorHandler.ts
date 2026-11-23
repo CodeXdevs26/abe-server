@@ -30,7 +30,7 @@ const globalErrorHandler = (
     message = "Data validation error!";
     statusCode = 400;
     errorSource = err?.issues?.map((issue: ZodIssue) => ({
-      path: issue?.path[issue?.path.length - 1],
+      path: String(issue?.path[issue?.path.length - 1] ?? ""),
       message: issue?.message,
     }));
   } else if (

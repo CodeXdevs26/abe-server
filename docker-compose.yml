@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017" # bind to localhost only - never expose unauthenticated MongoDB publicly
     volumes:
       - mongo-data:/data/db
 

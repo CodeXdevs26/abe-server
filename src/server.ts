@@ -85,7 +85,15 @@ const createAdmin = async () => {
       email,
     };
 
-    const password = "admin";
+    // Never seed a default/guessable admin password. Provide ADMIN_PASSWORD via env.
+    const password = process.env.ADMIN_PASSWORD;
+    if (!password || password.length < 12) {
+      await session.abortTransaction();
+      console.warn(
+        "Admin seeding skipped: set ADMIN_PASSWORD (min 12 chars) in the environment to create the initial admin account.",
+      );
+      return;
+    }
     const hashedPassword = await bcrypt.hash(
       password,
       Number(config.salt_rounds),

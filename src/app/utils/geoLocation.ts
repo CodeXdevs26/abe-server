@@ -6,8 +6,6 @@ const geocoder = NodeGeocoder({
 });
 
 const googleMapsClient = new Client({});
-const GOOGLE_MAPS_API_KEY =
-  process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyBFi80uuJIWkkLCpodFa8oXmD8XD_h8LMc';
 
 export async function geocodeLocation(address: string): Promise<{ latitude: number; longitude: number }> {
   const res = await geocoder.geocode(address);
@@ -18,7 +16,7 @@ export async function geocodeLocation(address: string): Promise<{ latitude: numb
   const googleResponse = await googleMapsClient.geocode({
     params: {
       address,
-      key: GOOGLE_MAPS_API_KEY,
+      key: process.env.GOOGLE_MAPS_API_KEY as string,
     },
   });
 

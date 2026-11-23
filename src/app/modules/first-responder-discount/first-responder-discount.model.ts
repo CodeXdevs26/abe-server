@@ -64,8 +64,6 @@ const firstResponderDiscountSchema =
     { timestamps: true },
   );
 
-firstResponderDiscountSchema.index({ key: 1 }, { unique: true });
-
 const FirstResponderDiscountModel = model<TFirstResponderDiscountSettings>(
   "FirstResponderDiscount",
   firstResponderDiscountSchema,

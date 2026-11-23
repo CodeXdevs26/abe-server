@@ -40,6 +40,4 @@ const voucherSchema = new Schema<TVoucher>(
   { timestamps: true },
 );
 
-voucherSchema.index({ code: 1 }, { unique: true });
-
 export const VoucherModel = mongoose.model<TVoucher>("Voucher", voucherSchema);

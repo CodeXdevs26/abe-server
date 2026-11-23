@@ -4,8 +4,9 @@ import { registerChatSocket } from "./chat.socket";
 
 export const initSocketServer = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
+    // Open to all origins (reflects request origin; valid with credentials).
     cors: {
-      origin: ["http://localhost:3000"],
+      origin: true,
       credentials: true,
     },
   });

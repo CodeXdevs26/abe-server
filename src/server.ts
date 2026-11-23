@@ -1,137 +1,87 @@
+import "dotenv/config";
+import { createServer, Server } from "http";
+import os from "os";
 import mongoose from "mongoose";
 import app from "./app";
 import config from "./app/config";
-import { createServer, Server } from "http";
-import AdminModel from "./app/modules/admin/admin.model";
-import bcrypt from "bcrypt";
-import AuthModel from "./app/modules/auth/auth.model";
-import net from "net";
 import { initSocketServer } from "./app/socket";
-import 'dotenv/config';
+import { runSeeders } from "./app/seeders";
 
-let server: Server;
+let server: Server | undefined;
 
-const isPortInUse = (port: number): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const tester = net
-      .createServer()
-      .once("error", () => resolve(true))
-      .once("listening", () => {
-        tester.once("close", () => resolve(false)).close();
-      })
-      .listen(port);
+const isDbConnectionRefused = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  error.code === "ECONNREFUSED";
+
+const listen = (port: number, host: string) =>
+  new Promise<Server>((resolve, reject) => {
+    const httpServer = createServer(app);
+    initSocketServer(httpServer);
+    httpServer.once("error", reject);
+    httpServer.listen(port, host, () => resolve(httpServer));
   });
+
+// All URLs the server is reachable on (expands 0.0.0.0 to every IPv4 interface).
+const getServerUrls = (host: string, port: number): string[] => {
+  if (host !== "0.0.0.0") return [`http://${host}:${port}`];
+
+  const lanIps = Object.values(os.networkInterfaces())
+    .flat()
+    .filter((net) => net && net.family === "IPv4" && !net.internal)
+    .map((net) => net!.address);
+
+  return ["localhost", ...lanIps].map((ip) => `http://${ip}:${port}`);
 };
 
 async function main() {
   try {
-    const portInUse = await isPortInUse(Number(config.port));
-    if (portInUse) {
-      console.log(`Server is running on port: ${config.port}`);
-      return;
-    }
-
     if (!config.database_url) {
       throw new Error("DATABASE_URL is missing in environment variables");
     }
 
     await mongoose.connect(config.database_url);
 
-    server = createServer(app);
-    initSocketServer(server);
+    const port = Number(config.port);
+    const host = config.ip_address;
+    server = await listen(port, host);
+    console.log(`Server is running on ${host}:${port}`);
+    getServerUrls(host, port).forEach((url) => console.log(`  -> ${url}`));
 
-    server.listen(Number(config.port), () => {
-      console.log(`Server is running on port: ${config.port}`);
-    });
-
-    await createAdmin();
-  } catch (error) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "ECONNREFUSED"
-    ) {
-      console.log(
+    await runSeeders();
+  } catch (error: any) {
+    if (error?.code === "EADDRINUSE") {
+      console.error(
+        `Port ${config.port} is already in use. Is another instance of the server running?`,
+      );
+    } else if (error?.code === "EADDRNOTAVAIL") {
+      console.error(
+        `IP_ADDRESS ${config.ip_address} is not assigned to this machine. Use one of its own IPs, or leave IP_ADDRESS empty to listen on all interfaces.`,
+      );
+    } else if (isDbConnectionRefused(error)) {
+      console.error(
         "Database connection failed. MongoDB Atlas DNS/network access is being refused. Check DATABASE_URL, internet access, DNS resolution, and Atlas Network Access/IP allowlist.",
       );
     }
-    console.log("Server error:", error);
+    console.error("Server error:", error);
     process.exit(1);
   }
 }
 
-const createAdmin = async () => {
-  const session = await mongoose.startSession();
-  const email = "admin@gmail.com";
-
-  try {
-    session.startTransaction();
-
-    const admin = await AdminModel.findOne({ email }).session(session);
-    const auth = await AuthModel.findOne({
-      email,
-      is_deleted: false,
-      is_blocked: false,
-    }).session(session);
-
-    if (admin && auth) {
-      await session.commitTransaction();
-      return;
-    }
-
-    const adminData = {
-      name: "Admin",
-      email,
-    };
-
-    // Never seed a default/guessable admin password. Provide ADMIN_PASSWORD via env.
-    const password = process.env.ADMIN_PASSWORD;
-    if (!password || password.length < 12) {
-      await session.abortTransaction();
-      console.warn(
-        "Admin seeding skipped: set ADMIN_PASSWORD (min 12 chars) in the environment to create the initial admin account.",
-      );
-      return;
-    }
-    const hashedPassword = await bcrypt.hash(
-      password,
-      Number(config.salt_rounds),
-    );
-
-    await AuthModel.create(
-      [{ email, password: hashedPassword, role: "admin", is_approved: true }],
-      {
-        session,
-      },
-    );
-
-    await AdminModel.create([adminData], { session });
-
-    await session.commitTransaction();
-    console.log("Admin account created successfully");
-  } catch (err: any) {
-    await session.abortTransaction();
-    console.log("Error creating admin account:", err.message);
-  } finally {
-    session.endSession();
-  }
+const shutdown = (exitCode: number) => {
+  if (!server) return process.exit(exitCode);
+  server.close(() => process.exit(exitCode));
 };
 
-main();
-
 process.on("unhandledRejection", (error) => {
-  console.log(`Unhandled Rejection: ${error}`);
-  if (server) {
-    server.close(() => {
-      process.exit(1);
-    });
-  } else {
-    process.exit(1);
-  }
+  console.error("Unhandled Rejection:", error);
+  shutdown(1);
 });
 
 process.on("uncaughtException", (error) => {
-  console.log(`Uncaught Exception: ${error}`);
+  console.error("Uncaught Exception:", error);
   process.exit(1);
 });
+
+main();

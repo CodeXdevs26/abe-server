@@ -8,9 +8,11 @@ import paymentController from "./app/modules/payment/payment.controller";
 
 const app = express();
 
+// CORS open to all origins. `origin: true` reflects the request origin, which
+// (unlike "*") stays valid together with `credentials: true`.
 app.use(
   cors({
-    origin: ["http://10.10.28.34:3000", "http://72.244.153.29:3002"],
+    origin: true,
     credentials: true,
   }),
 );

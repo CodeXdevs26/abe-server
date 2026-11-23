@@ -10,6 +10,8 @@ const toNumber = (value?: string) => {
 
 export default {
   port: process.env.PORT,
+  // Interface/IP to bind the server to. Empty = all interfaces (0.0.0.0).
+  ip_address: process.env.IP_ADDRESS || "0.0.0.0",
   database_url: process.env.DATABASE_URL,
   node_env: process.env.NODE_ENV,
   salt_rounds: process.env.SALT_ROUNDS,
